@@ -59,3 +59,8 @@ data-preprocessing-polars/
 ├── requirements.txt
 └── README.md
 ```
+
+To verify that the generated splits are correct, you can use the `dataset.py` script to load the splits and inspect their contents. `dataset.py` contains a demo to run a simple test to load the dataset and print out some samples. You can run it with:
+```bash
+python dataset.py
+```
