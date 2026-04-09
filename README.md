@@ -27,17 +27,17 @@ The directory structure should look like this:
 data-preprocessing-polars/
 ├── data/
 |   └── occurrence/  # This is the symbolic link to the original data directory
-├── gen_data_split.py
+├── gen_data_splits.py
 ├── requirements.txt
 └── README.md
 ```
 
 After setting up the environment, you can run the main data processing script:
 ```bash
-python gen_data_split.py
+python gen_data_splits.py
 ```
 
-`gen_data_split.py` is the main script that performs the data processing and splitting. It reads the Parquet files, applies the necessary transformations and filters, and writes the resulting splits to disk in Parquet format.
+`gen_data_splits.py` is the main script that performs the data processing and splitting. It reads the Parquet files, applies the necessary transformations and filters, and writes the resulting splits to disk in Parquet format.
 
 You may see the following output in the console as the script runs:
 ```
@@ -55,7 +55,7 @@ data-preprocessing-polars/
 |   ├── train.parquet
 |   ├── dev.parquet
 |   └── test.parquet
-├── gen_data_split.py
+├── gen_data_splits.py
 ├── requirements.txt
 └── README.md
 ```
