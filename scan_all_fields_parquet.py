@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import time
-import pyarrow.parquet as pq
 import polars as pl
 
 
