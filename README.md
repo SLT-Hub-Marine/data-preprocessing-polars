@@ -7,18 +7,20 @@ The code is designed to process the `interpreted` data stored in `Parquet` files
 ## Getting Started
 
 You can clone the repository with
-```bash
+```sh
 git clone git@github.com:SLT-Hub-Marine/data-preprocessing-polars.git
 ```
 
+*Optionally, create/activate a conda/virtual environment or enter a dev container to isolate the dependencies for this project.*
+
 Then, you can navigate to the directory and install the required dependencies using pip:
-```bash
+```sh
 cd data-preprocessing-polars
 pip install -r requirements.txt
 ```
 
 Once you have the environment set up, you also need to link the data directory containing the Parquet files to the current directory. You can do this by creating a symbolic link:
-```bash
+```sh
 ln -s /path/to/your/data ./
 ```
 
@@ -33,7 +35,7 @@ data-preprocessing-polars/
 ```
 
 After setting up the environment, you can run the main data processing script:
-```bash
+```sh
 python gen_data_splits.py
 ```
 
