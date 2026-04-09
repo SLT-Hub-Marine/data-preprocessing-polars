@@ -5,7 +5,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 
+import tqdm
+
 TARGET_COLUMN = "interpreted"
+LOW_MEMORY = True
 
 class DataSample:
     def __init__(self, sample: dict):
@@ -30,6 +33,7 @@ class DataSample:
         self.species = sample.get("species")
         self.scientificName = sample.get("scientificName")
         self.occurrenceID = sample.get("occurrenceID")
+        self.raw = sample
 
 class DataBatch:
     def __init__(self, samples: list[DataSample]):
@@ -54,6 +58,7 @@ class DataBatch:
         self.species = [sample.species for sample in samples]
         self.scientificName = [sample.scientificName for sample in samples]
         self.occurrenceID = [sample.occurrenceID for sample in samples]
+        self.raw = [sample.raw for sample in samples]
 
 class MarineDataset(Dataset):
     def __init__(self, path: Path):
@@ -65,9 +70,9 @@ class MarineDataset(Dataset):
         """
         self.path = path
         self.df = (
-            pl.scan_parquet(path)
+            pl.scan_parquet(path, low_memory=LOW_MEMORY, cache=False)
         )
-        self.total_samples = self.df.select(pl.len()).collect().item()
+        self.total_samples = self.df.select(pl.len()).collect(engine="streaming").item()
 
     def __len__(self) -> int:
         """
@@ -96,16 +101,17 @@ class MarineDataset(Dataset):
         # We use 'slice' to get a single row as a DataFrame, 
         # then select the target column and unnest it to get the fields as a dictionary.
         sample = (
-            self.df.slice(idx, 1)
+            self.df
             .select(pl.col(TARGET_COLUMN))
+            .slice(idx, 1)
             .unnest(TARGET_COLUMN)
-        ).collect().to_dicts()[0]
+        ).collect(engine="streaming").to_dicts()[0]
         return DataSample(sample)
 
     def collate_fn(self, batch: list[DataSample]) -> DataBatch:
         """
         Collate a list of samples into a batch.
-        
+
         Args:
             batch: A list of DataSample instances to collate into a batch.
         Returns: 
@@ -113,11 +119,21 @@ class MarineDataset(Dataset):
         """
         data_batch = DataBatch(batch)
         return data_batch
+    
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
 
 if __name__ == "__main__":
     # Example usage
     dataset = MarineDataset(Path("data/train.parquet"))
-    print(f"Total samples in dataset: {len(dataset)}")
+    print(f"Total samples in train split: {len(dataset)}")
+
+    dataset_dev = MarineDataset(Path("data/dev.parquet"))
+    print(f"Total samples in dev split: {len(dataset_dev)}")
+
+    dataset_test = MarineDataset(Path("data/test.parquet"))
+    print(f"Total samples in test split: {len(dataset_test)}")
 
     # Get the first sample and print its contents
     sample = dataset[0]
@@ -128,3 +144,9 @@ if __name__ == "__main__":
     for batch in dataloader:
         print(f"First batch: {batch.__dict__}")
         break
+    
+    print("Test iterating through batches... (10 batches)")
+    for batch_idx, batch in enumerate(tqdm.tqdm(dataloader, total=len(dataset) // 32)):
+        # Test iterating through the batches
+        if batch_idx == 10:
+            break
