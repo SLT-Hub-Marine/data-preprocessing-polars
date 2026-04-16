@@ -234,19 +234,21 @@ if __name__ == "__main__":
     print(f"Total samples in test split: {len(dataset_test)}")
 
     # Get the first sample and print its contents
-    sample = next(iter(dataset))
-    print(f"First sample: {sample.__dict__}")
+    _ = next(iter(dataset))
 
-    # Create a DataLoader to iterate over the dataset in batches
     BATCH_SIZE = 32
+    NUM_BATCHES_TO_TEST = 3000
+
+    # ==== dataset without filter ====
+    
+    # Create a DataLoader to iterate over the dataset in batches
     dataloader = DataLoader(
         dataset, batch_size=BATCH_SIZE, collate_fn=dataset.collate_fn
     )
-    for batch in dataloader:
-        print(f"First batch: {batch.__dict__}")
-        break
 
-    NUM_BATCHES_TO_TEST = 10000
+    # Get the first batch to test the dataloader
+    _ = next(iter(dataloader))
+
     print(f"Test iterating through batches... ({NUM_BATCHES_TO_TEST} batches)")
     for batch_idx, batch in enumerate(
         tqdm.tqdm(
@@ -262,5 +264,40 @@ if __name__ == "__main__":
         if batch_idx == NUM_BATCHES_TO_TEST:
             tqdm.tqdm.write("Reached 10,000 batches, stopping iteration.")
             break
+
+    dataset_with_filter = MarineDataset(
+        "data/train.parquet", 
+        filter_expr=(
+            pl.col("samplingProtocol").is_not_null()
+            & (pl.col("bathymetry") < -5)
+            & pl.col('species').eq('Gadus morhua')
+            # & pl.col('species').is_in(['Gadus morhua', 'Salvelinus alpinus']) # FIXME: High memory usage
+        )
+    )
+    print(f"Total samples in train split with filter: {len(dataset_with_filter)}")
+
+    # ==== dataset with filter ====
+
+    dataloader_with_filter = DataLoader(
+        dataset_with_filter, batch_size=BATCH_SIZE, collate_fn=dataset_with_filter.collate_fn
+    )
+
+    _ = next(iter(dataloader_with_filter))
+
+    for batch_idx, batch in enumerate(
+        tqdm.tqdm(
+            dataloader_with_filter,
+            total=len(dataset_with_filter) // BATCH_SIZE,
+            desc="Iterating batches with filter",
+            unit="batch",
+            dynamic_ncols=True,
+            leave=True,
+        )
+    ):
+        # Test iterating through the batches with filter
+        if batch_idx == NUM_BATCHES_TO_TEST:
+            tqdm.tqdm.write("Reached 10,000 batches, stopping iteration.")
+            break
+    
 
     print("Done.")
